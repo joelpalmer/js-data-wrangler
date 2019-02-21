@@ -27,7 +27,8 @@ dataForge
 		const dataFrameWithForecast = dataFrame.withSeries({
 			Trend: fatalitiesSeriesWithForecast
 		});
-		console.log(dataFrameWithForecast.toString());
+        return dataFrameWithForecast.asCSV()
+            .writeFile("./output/trend_output.csv");
 	})
 	.catch(err => {
 		console.error((err && err.stack) || err);
