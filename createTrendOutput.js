@@ -6,24 +6,28 @@ dataForge
 	.readFile("./data/monthly_crashes-cut-down.csv")
 	.parseCSV()
 	.then(dataFrame => {
-		dataFrame = dataFrame.parseFloats([
-			"Month#",
-			"Year",
-			"Crashes",
-			"Fatalities",
-			"Hospitalized"
-		]);
-		const monthNoSeries = dataFrame.getSeries("Month#");
-		const xValues = monthNoSeries.head(6).toArray();
+		dataFrame = dataFrame
+			.parseFloats(["Month#", "Year", "Crashes", "Fatalities", "Hospitalized"])
+			.setIndex("Month#");
+
 		const fatalitiesSeries = dataFrame.getSeries("Fatalities");
-		const yValues = fatalitiesSeries.head(6).toArray();
-		const nextMonthNo = monthNoSeries.skip(6).first();
-		const nextMonthFatalitiesForecast = formulajs.FORECAST(
-			nextMonthNo,
-			yValues,
-			xValues
-		);
-		console.log(`Forecasted Fatalities: ${nextMonthFatalitiesForecast}`);
+		const fatalitiesSeriesWithForecast = fatalitiesSeries
+			.rollingWindow(6)
+			.select(window => {
+				const fatalitiesValues = window.toArray();
+				const monthNoValues = window.getIndex().toArray();
+				const nextMonthNo = monthNoValues[monthNoValues.length - 1] + 1;
+				return [
+					nextMonthNo,
+					formulajs.FORECAST(nextMonthNo, fatalitiesValues, monthNoValues)
+				];
+			})
+			.withIndex(pair => pair[0])
+			.select(pair => pair[1]);
+		const dataFrameWithForecast = dataFrame.withSeries({
+			Trend: fatalitiesSeriesWithForecast
+		});
+		console.log(dataFrameWithForecast.toString());
 	})
 	.catch(err => {
 		console.error((err && err.stack) || err);
