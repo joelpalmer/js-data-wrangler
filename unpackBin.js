@@ -21,4 +21,4 @@ for (let recordIndex = 0; recordIndex < numRecords; ++recordIndex) {
     records.push(record);
 }
 
-console.log(records);
+console.log(`Records: ${records}`);
